@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bubble app</title>
+    <style>
+        body {
+            width: 100%;
+            height: 100vh;
+            display: grid;
+            justify-content: center;
+            
+            margin: 0;
+        }
+        .container {
+           
+            border: 2px solid;
+            height: 480px;
+            width: 800px;
+        }
+        button{
+            width: 100px;
+            height: 30px;
+            border-radius: 4px;
+            background-color: black;
+            color: white;
+        }
+        button:hover{
+            background-color: white;
+            color: black;
+        }
+         input {
+            width: 100px;
+            height: 30px;
+            text-align: center;
+            border-radius: 4px;
+            
+        }
+
+    </style>
+</head>
+<body>
+    <h2 style="text-align: center;">Bubble app</h2>
+   <div style="text-align: right;">
+   <!-- I have added some additional features to the modules below, such as:
+     1. dynamically changing the speed,
+     2. Number of circles: when any changes are applied, it adjusts the radius size to fit the height of the container. 
+     Note that the number of circles only applies if the radius is greater than 5.
+     3. Radius of the circles: when any changes are applied, it adjusts the number of circles inside the container. 
+     Note: the radius must be greater than 5 and less than one-third of the container's size.
+-->
+
+    <label>Speed per pixel : </label>
+    <input id="speed" type="number" value = "1" min="1" >
+    <label>No of circle : </label>
+    <input id="circles" type="number" min="1" >
+    <label>Radius:</label>
+    <input id="radius" type="number" value="40"  min="5">
+   </div>
+   
+    <div class="container">
+        <div>
+            <canvas id="element" ></canvas>
+        </div>
+    </div>
+    <div style="text-align: right;">
+        <button onclick="reset()">Reset</button>
+    </div>
+    <script>
+        const inputSpeed = document.getElementById("speed");
+        const inputRadius = document.getElementById("radius");
+        const inputCircle = document.getElementById("circles");
+        const container = document.getElementsByClassName("container")[0];
+        const colors = ["red", "green", "blue", "yellow"];
+        const canvasId = document.getElementById("element");
+        
+        
+        let radius = Number(inputRadius.value);
+      
+       Cwidth = canvasId.width = container.clientWidth;
+       Cheight = canvasId.height = container.clientHeight;
+       top_y = 2*radius+20
+       let left_x = radius+20;
+       inputCircle.value  =  n = noOfcircleFit(Cheight);
+       
+       
+       
+        let  speed = Number(inputSpeed.value);
+        const StrokeColor = 'black';
+        
+
+        console.log(n)
+        const colorTo = "grey"
+        const rect = canvasId.getBoundingClientRect();
+        const ArrowChanged = [];
+        canvasId.addEventListener('click', handleclick);
+        const canvas = canvasId.getContext("2d")
+        const ArrowReached = [];
+
+        function circle(ctx,color,y){
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            ctx.arc(left_x,y,radius, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.strokeStyle = StrokeColor;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        function arrowHead(ctx,x,y){
+            ctx.fillStyle = 'black';
+            ctx.fillRect(x, top_y-5+y,40, 9);
+            ctx.beginPath();
+            
+            ctx.moveTo(x-20, top_y+y);
+            ctx.lineTo(x, top_y-10+y);
+            ctx.lineTo(x, top_y+10+y);
+            ctx.closePath();
+            ctx.fill();
+        }
+        function CreateCircle(){
+            for (let i = 0; i < n; i++) {
+            circle(canvas,colors[i%colors.length], top_y + i * top_y);}
+
+        }
+
+        function CreateArrows(){
+            for (let i = 0; i < n; i++) {
+            arrowHead(canvas,Cwidth-130,top_y*i);
+            
+        }
+        }
+        function handleclick(event) {
+                let distance_x = event.clientX - rect.left - left_x;
+                let distance_y = event.clientY - rect.top - top_y;
+
+                for (let i = 0; i < n; i++) {
+                    const distance = Math.sqrt(distance_x * distance_x + distance_y * distance_y);
+                    console.log(distance);
+                    if (distance <= radius && ArrowChanged.indexOf(i) === -1) {
+                        ArrowChanged.push(i);
+                        moveArrows(i, 0);
+                    }
+                    distance_y -= top_y;
+                }
+}
+
+        
+       function moveArrows(i, x) {
+            let x_axis = Cwidth-130-x
+            let y_axis = top_y*i;
+            
+
+            x += speed;
+
+            if (left_x+radius>x_axis-20) {
+                while(x_axis-20!=left_x+radius){
+                   x_axis+=1
+                }
+                clearArrow(x_axis,y_axis+top_y-10);
+                arrowHead(canvas,x_axis,y_axis);
+                ArrowReached.push(i);
+                circle(canvas,colorTo, top_y + i * top_y);
+               
+                return;
+            }else{
+                clearArrow(x_axis,y_axis+top_y-10);
+                arrowHead(canvas,x_axis,y_axis);
+            }
+            requestAnimationFrame(() => moveArrows(i, x));
+        }
+        function clearArrow(x,y){
+            canvas.clearRect(x,y,100,20); 
+        }
+
+        function reset(){
+                ArrowReached.forEach((i) => {
+                    const x_axis = radius+left_x
+                    const y_axis = top_y*i;
+                    clearArrow(x_axis,+y_axis+top_y-10);
+                    arrowHead(canvas,Cwidth-130,y_axis);
+                    circle(canvas,colors[i%colors.length], top_y + i * top_y);
+
+                
+                });
+               ArrowChanged.length = ArrowReached.length = 0;
+               
+        }
+        function noOfcircleFit(h){
+                let n = 0;
+                
+                while(h>top_y){
+                    h-=top_y;
+                    n++;
+                }
+                h-=radius;
+                n = h <= 0 ? n - 1 : n
+                console.log(h)
+                return n;
+        }
+        function calculateRadius(n){
+               let Radius = (Cheight - 20*n)/((n+1)*2)
+               return Radius<5?-1:Math.ceil(Radius);
+
+        }
+
+
+        
+        inputRadius.addEventListener('change', () => {
+            let R = Number(inputRadius.value)
+            if(R > 5 && R < Cheight- 2*R-20){
+                radius = R ;
+                left_x = radius+20
+            top_y = 2*radius + 20
+            inputCircle.value  = n = noOfcircleFit(Cheight);
+           
+            canvas.clearRect(0, 0, Cwidth, Cheight);
+            console.log(n)
+            CreateCircle();
+            
+            CreateArrows();
+            }else{
+                inputRadius.value = radius
+            }
+          
+      });
+        inputCircle.addEventListener('change',()=>{
+            
+            let noOfcircle = Number(inputCircle.value)
+            if(noOfcircle>0){
+                let Radius = calculateRadius(noOfcircle);
+                if(Radius>0){
+                   inputRadius.value = radius = Radius;
+                  left_x = radius+20
+                  top_y = 2*radius + 20
+                  canvas.clearRect(0, 0, Cwidth, Cheight);
+                   n = noOfcircle; 
+                   console.log(n)
+                    CreateCircle();
+                    CreateArrows();
+
+                }else{
+                    inputCircle.value = n;
+                }
+            }else{
+               inputCircle.value = n;
+            }
+            
+
+        })
+        inputSpeed.addEventListener('change',()=>{
+            let speedTemp  = Number(inputSpeed.value) 
+            if(Cheight/speedTemp > 5){
+                speed = speedTemp;
+            }else{
+                inputSpeed.value = speed;
+            }
+            
+
+        })
+
+        CreateCircle();
+        CreateArrows();
+        
+
+
+        
+        
+       
+      
+        
+        
+       
+    </script>
+</body>
+</html>
